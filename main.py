@@ -1,6 +1,7 @@
 import json
 import requests
 import os
+import uvicorn
 from typing import Dict, Any
 from dotenv import load_dotenv
 from weather_agent import WeatherAgent
@@ -318,7 +319,6 @@ class ReasoningEngine:
 # For deployment on Render, we'll create a FastAPI app
 def create_app():
     from fastapi import FastAPI, File, UploadFile, Form
-    import uvicorn
     import tempfile
     
     app = FastAPI(title="Disaster Response Reasoning Engine")
