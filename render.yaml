@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: disaster-response-engine
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.15
