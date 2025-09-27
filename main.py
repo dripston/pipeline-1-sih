@@ -86,45 +86,91 @@ class ReasoningEngine:
         return True
 
     def generate_reports(self, visual_summary, weather_summary, location_name):
-        """Generate emergency reports only for relevant content"""
+        """Generate intelligent emergency reports that correlate weather and visual data"""
         # Try each SambaNova API key until one works
         for i, api_key in enumerate(self.sambanova_api_keys):
             try:
                 print(f"Trying SambaNova API key {i+1}/{len(self.sambanova_api_keys)}...")
-                
+
                 headers = {
                     "Authorization": f"Bearer {api_key}",
                     "Content-Type": "application/json"
                 }
 
-                prompt = f"""
-                Generate emergency response reports based on this situation:
+                # First, generate trust evaluation
+                trust_prompt = f"""
+                Evaluate the reliability and trustworthiness of this emergency report data:
 
-                VISUAL SITUATION: {visual_summary}
-                CURRENT WEATHER: {weather_summary}
+                VISUAL ANALYSIS: {visual_summary}
+                WEATHER DATA: {weather_summary}
                 LOCATION: {location_name}
 
-                Generate three concise reports:
+                Provide a trust score from 0-100 and brief reasoning considering:
+                - Data consistency between visual and weather information
+                - Information quality and specificity
+                - Potential reliability concerns
 
-                1. AUTHORITY REPORT: For emergency responders - focus on immediate actions, risks, resources needed.
+                Format: Score: [number], Reasoning: [brief explanation]
+                """
 
-                2. PUBLIC ALERT: For residents - clear safety instructions and what to do.
+                trust_payload = {
+                    "model": self.reasoning_model,
+                    "messages": [{"role": "user", "content": trust_prompt}],
+                    "max_tokens": 150,
+                    "temperature": 0.3
+                }
 
-                3. VOLUNTEER GUIDANCE: For helpers - specific tasks and coordination.
+                trust_response = requests.post(
+                    "https://api.sambanova.ai/v1/chat/completions",
+                    headers=headers,
+                    json=trust_payload,
+                    timeout=15
+                )
 
-                Be direct and actionable. Focus only on the emergency aspects.
+                trust_score = 75  # default
+                trust_reasoning = "Standard reliability assessment"
+
+                if trust_response.status_code == 200:
+                    trust_content = trust_response.json()["choices"][0]["message"]["content"]
+                    # Extract score from response
+                    import re
+                    score_match = re.search(r'Score:\s*(\d+)', trust_content, re.IGNORECASE)
+                    if score_match:
+                        trust_score = min(max(int(score_match.group(1)), 0), 100)
+                    trust_reasoning = trust_content
+
+                # Now generate correlated reports
+                prompt = f"""
+                Generate intelligent emergency response reports that SPECIFICALLY correlate the weather and visual data:
+
+                VISUAL ANALYSIS: {visual_summary}
+                WEATHER CONDITIONS: {weather_summary}
+                LOCATION: {location_name}
+                TRUST SCORE: {trust_score}/100 ({trust_reasoning})
+
+                IMPORTANT: Your reports must directly reference and correlate specific details from BOTH the visual analysis and weather data. Do not generate generic reports.
+
+                Generate three data-driven reports:
+
+                1. AUTHORITY REPORT: For emergency responders - reference specific weather conditions, visual damage assessment, immediate risks based on the actual data, and location-specific resource needs.
+
+                2. PUBLIC ALERT: For residents - correlate current weather patterns with observed flooding/damage, provide location-specific safety instructions based on the actual conditions.
+
+                3. VOLUNTEER GUIDANCE: For helpers - reference specific visual elements (buildings affected, people locations) and weather conditions to guide targeted assistance.
+
+                Each report must demonstrate understanding of how the weather conditions are causing or exacerbating the visual situation. Include the trust score context in authority report.
                 """
 
                 payload = {
                     "model": self.reasoning_model,
                     "messages": [{"role": "user", "content": prompt}],
-                    "max_tokens": 800,
-                    "temperature": 0.5
+                    "max_tokens": 1200,
+                    "temperature": 0.4
                 }
 
                 response = requests.post(
-                    "https://api.sambanova.ai/v1/chat/completions", 
-                    headers=headers, 
+                    "https://api.sambanova.ai/v1/chat/completions",
+                    headers=headers,
                     json=payload,
                     timeout=30
                 )
@@ -132,11 +178,19 @@ class ReasoningEngine:
                 if response.status_code == 200:
                     content = response.json()["choices"][0]["message"]["content"]
 
-                    return {
+                    reports = {
                         "authority_report": self._extract_section(content, "AUTHORITY REPORT"),
                         "public_alert": self._extract_section(content, "PUBLIC ALERT"),
                         "volunteer_guidance": self._extract_section(content, "VOLUNTEER GUIDANCE")
                     }
+
+                    # Add trust evaluation to the response
+                    reports["trust_evaluation"] = {
+                        "score": trust_score,
+                        "reasoning": trust_reasoning
+                    }
+
+                    return reports
                 else:
                     print(f"SambaNova API request failed with status code: {response.status_code}")
                     print(f"Response: {response.text}")
@@ -144,7 +198,7 @@ class ReasoningEngine:
             except Exception as e:
                 print(f"Error with SambaNova API key {i+1}: {e}")
                 continue
-        
+
         return {"error": "Failed to generate reports with all available API keys"}
 
     def _extract_section(self, content, section_name):
@@ -280,7 +334,12 @@ class ReasoningEngine:
                 "timestamp": gps_data.get("timestamp"),
                 "weather_summary": weather_summary,
                 "visual_summary": visual_summary,
-                "reports": reports
+                "trust_evaluation": reports.get("trust_evaluation", {"score": 75, "reasoning": "Default assessment"}),
+                "reports": {
+                    "authority_report": reports.get("authority_report", ""),
+                    "public_alert": reports.get("public_alert", ""),
+                    "volunteer_guidance": reports.get("volunteer_guidance", "")
+                }
             }
             
         except Exception as e:
