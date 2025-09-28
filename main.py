@@ -53,25 +53,39 @@ class ReasoningEngine:
             
         visual_lower = visual_summary.lower()
         
-        # Weather and emergency related keywords
-        weather_keywords = [
-            'flood', 'rain', 'storm', 'hurricane', 'cyclone', 'typhoon', 'tornado',
-            'landslide', 'earthquake', 'tsunami', 'wildfire', 'blizzard', 'hail',
-            'lightning', 'thunder', 'precipitation', 'downpour', 'deluge',
-            'submerged', 'inundated', 'water level', 'high water', 'rising water'
+        # Primary flood and water emergency indicators
+        flood_keywords = [
+            'flood', 'flooded', 'flooding', 'submerged', 'inundated', 
+            'water level', 'high water', 'rising water', 'overflow',
+            'swollen river', 'river in flood', 'water covering'
         ]
         
-        emergency_keywords = [
+        # Weather disaster keywords
+        weather_disaster_keywords = [
+            'storm', 'hurricane', 'cyclone', 'typhoon', 'tornado',
+            'landslide', 'wildfire', 'blizzard', 'hail',
+            'lightning', 'thunder', 'downpour', 'deluge'
+        ]
+        
+        # Emergency situation indicators
+        emergency_indicators = [
             'disaster', 'emergency', 'damage', 'destroyed', 'evacuation', 'rescue',
-            'stranded', 'trapped', 'emergency services', 'first responders',
-            'devastation', 'catastrophe', 'crisis', 'alert', 'warning'
+            'stranded', 'trapped', 'devastation', 'catastrophe', 'crisis',
+            'partially submerged', 'fully submerged', 'debris', 'uprooted',
+            'people on roof', 'people standing on', 'waiting for rescue'
         ]
         
-        # Must have at least one weather keyword AND one emergency keyword
-        has_weather = any(keyword in visual_lower for keyword in weather_keywords)
-        has_emergency = any(keyword in visual_lower for keyword in emergency_keywords)
+        # Check for flood situations (most common emergency)
+        has_flood = any(keyword in visual_lower for keyword in flood_keywords)
         
-        return has_weather and has_emergency
+        # Check for other weather disasters
+        has_weather_disaster = any(keyword in visual_lower for keyword in weather_disaster_keywords)
+        
+        # Check for emergency indicators
+        has_emergency_signs = any(keyword in visual_lower for keyword in emergency_indicators)
+        
+        # Accept if it's clearly a flood OR has weather disaster with emergency signs
+        return has_flood or (has_weather_disaster and has_emergency_signs)
 
     def should_process_image(self, visual_summary):
         """Determine if we should process this image for emergency response"""
@@ -229,13 +243,24 @@ class ReasoningEngine:
         visual_summary = visual_result.get("visual_summary", "")
 
         # Check if we should process this image
+        screen_capture = self.is_screen_capture(visual_summary)
+        weather_emergency = self.is_weather_emergency_related(visual_summary)
+        
         if not self.should_process_image(visual_summary):
+            # Provide specific rejection reason
+            if screen_capture:
+                reason = "Image appears to be a screen capture or screenshot"
+            elif not weather_emergency:
+                reason = "Image does not appear to be related to weather emergencies or disasters"
+            else:
+                reason = "Image failed processing criteria"
+                
             return {
                 "status": "REJECTED",
-                "reason": "Image is either a screen capture or not related to weather emergencies",
+                "reason": reason,
                 "visual_summary": visual_summary,
-                "screen_capture_detected": self.is_screen_capture(visual_summary),
-                "weather_emergency_related": self.is_weather_emergency_related(visual_summary)
+                "screen_capture_detected": screen_capture,
+                "weather_emergency_related": weather_emergency
             }
 
         # Only proceed if it's a valid emergency situation
@@ -303,13 +328,24 @@ class ReasoningEngine:
             visual_summary = visual_result.get("visual_summary", "")
             
             # Check if we should process this image
+            screen_capture = self.is_screen_capture(visual_summary)
+            weather_emergency = self.is_weather_emergency_related(visual_summary)
+            
             if not self.should_process_image(visual_summary):
+                # Provide specific rejection reason
+                if screen_capture:
+                    reason = "Image appears to be a screen capture or screenshot"
+                elif not weather_emergency:
+                    reason = "Image does not appear to be related to weather emergencies or disasters"
+                else:
+                    reason = "Image failed processing criteria"
+                    
                 return {
                     "status": "REJECTED",
-                    "reason": "Image is either a screen capture or not related to weather emergencies",
+                    "reason": reason,
                     "visual_summary": visual_summary,
-                    "screen_capture_detected": self.is_screen_capture(visual_summary),
-                    "weather_emergency_related": self.is_weather_emergency_related(visual_summary)
+                    "screen_capture_detected": screen_capture,
+                    "weather_emergency_related": weather_emergency
                 }
             
             # Only proceed if it's a valid emergency situation
