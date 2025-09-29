@@ -331,6 +331,12 @@ class ReasoningEngine:
             print("Generating emergency reports...")
             reports = self.generate_reports(visual_summary, weather_summary, location_name)
             
+            # NEW: Check if the visual summary contains the word "screen" and adjust trust score
+            trust_evaluation = reports.get("trust_evaluation", {"score": 75, "reasoning": "Default assessment"})
+            if "screen" in visual_summary.lower():
+                trust_evaluation["score"] = 0
+                trust_evaluation["reasoning"] = "Visual summary contains the word 'screen', indicating a screenshot or screen recording which reduces trust."
+            
             return {
                 "status": "PROCESSED",
                 "location": location_name,
@@ -338,7 +344,7 @@ class ReasoningEngine:
                 "timestamp": gps_data.get("timestamp"),
                 "weather_summary": weather_summary,
                 "visual_summary": visual_summary,
-                "trust_evaluation": reports.get("trust_evaluation", {"score": 75, "reasoning": "Default assessment"}),
+                "trust_evaluation": trust_evaluation,
                 "reports": {
                     "authority_report": reports.get("authority_report", ""),
                     "public_alert": reports.get("public_alert", ""),
