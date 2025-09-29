@@ -18,10 +18,10 @@ class VisualSummaryAgent:
         """
         # Use provided keys or get from environment variables
         self.sambanova_api_keys = sambanova_api_keys or [
-            os.getenv("SAMBANOVA_API_KEY_1"),
-            os.getenv("SAMBANOVA_API_KEY_2"),
+            os.getenv("SAMBANOVA_API_KEY_4"),
             os.getenv("SAMBANOVA_API_KEY_3"),
-            os.getenv("SAMBANOVA_API_KEY_4")
+            os.getenv("SAMBANOVA_API_KEY_2"),
+            os.getenv("SAMBANOVA_API_KEY_1")
         ]
         # Filter out None values
         self.sambanova_api_keys = [key for key in self.sambanova_api_keys if key]
@@ -376,10 +376,10 @@ class VisualSummaryAgent:
 if __name__ == "__main__":
     # Get API keys from environment variables
     SAMBANOVA_API_KEYS = [
-        os.getenv("SAMBANOVA_API_KEY_1"),
-        os.getenv("SAMBANOVA_API_KEY_2"),
+        os.getenv("SAMBANOVA_API_KEY_4"),
         os.getenv("SAMBANOVA_API_KEY_3"),
-        os.getenv("SAMBANOVA_API_KEY_4")
+        os.getenv("SAMBANOVA_API_KEY_2"),
+        os.getenv("SAMBANOVA_API_KEY_1")
     ]
     # Filter out None values
     SAMBANOVA_API_KEYS = [key for key in SAMBANOVA_API_KEYS if key]

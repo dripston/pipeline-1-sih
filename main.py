@@ -15,10 +15,10 @@ class ReasoningEngine:
         # Load API keys from environment variables with fallbacks
         self.weatherapi_key = os.getenv("WEATHERAPI_KEY")
         self.sambanova_api_keys = [
-            os.getenv("SAMBANOVA_API_KEY_1"),
-            os.getenv("SAMBANOVA_API_KEY_2"),
+            os.getenv("SAMBANOVA_API_KEY_4"),
             os.getenv("SAMBANOVA_API_KEY_3"),
-            os.getenv("SAMBANOVA_API_KEY_4")
+            os.getenv("SAMBANOVA_API_KEY_2"),
+            os.getenv("SAMBANOVA_API_KEY_1")
         ]
         # Filter out None values
         self.sambanova_api_keys = [key for key in self.sambanova_api_keys if key]
