@@ -136,6 +136,11 @@ class ReasoningEngine:
                         trust_score = min(max(int(score_match.group(1)), 0), 100)
                     trust_reasoning = trust_content
 
+                # NEW: Check if the visual summary contains the word "screen" and reduce trust score to zero
+                if "screen" in visual_summary.lower():
+                    trust_score = 0
+                    trust_reasoning = "Visual summary contains the word 'screen', indicating a screenshot or screen recording which reduces trust."
+
                 # Now generate correlated reports
                 prompt = f"""
                 Generate intelligent emergency response reports that SPECIFICALLY correlate the weather and visual data:
