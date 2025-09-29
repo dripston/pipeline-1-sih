@@ -31,20 +31,7 @@ class ReasoningEngine:
         )
         self.reasoning_model = "Llama-4-Maverick-17B-128E-Instruct"
 
-    def is_screen_capture(self, visual_summary):
-        """Simple check if visual summary indicates screen capture"""
-        if not visual_summary:
-            return False
-            
-        visual_lower = visual_summary.lower()
-        
-        # Direct screen indicators
-        screen_keywords = [
-            'screen', 'tablet', 'phone', 'device', 'displayed on', 'shown on',
-            'captured on', 'photograph of a screen', 'image of a screen'
-        ]
-        
-        return any(keyword in visual_lower for keyword in screen_keywords)
+
 
     def is_weather_emergency_related(self, visual_summary):
         """Check if content is related to weather emergencies"""
@@ -89,10 +76,6 @@ class ReasoningEngine:
 
     def should_process_image(self, visual_summary):
         """Determine if we should process this image for emergency response"""
-        if self.is_screen_capture(visual_summary):
-            print("❌ Image appears to be a screen capture - stopping processing")
-            return False
-            
         if not self.is_weather_emergency_related(visual_summary):
             print("❌ Image not related to weather emergencies - stopping processing")
             return False
@@ -243,23 +226,13 @@ class ReasoningEngine:
         visual_summary = visual_result.get("visual_summary", "")
 
         # Check if we should process this image
-        screen_capture = self.is_screen_capture(visual_summary)
         weather_emergency = self.is_weather_emergency_related(visual_summary)
         
         if not self.should_process_image(visual_summary):
-            # Provide specific rejection reason
-            if screen_capture:
-                reason = "Image appears to be a screen capture or screenshot"
-            elif not weather_emergency:
-                reason = "Image does not appear to be related to weather emergencies or disasters"
-            else:
-                reason = "Image failed processing criteria"
-                
             return {
                 "status": "REJECTED",
-                "reason": reason,
+                "reason": "Image does not appear to be related to weather emergencies or disasters",
                 "visual_summary": visual_summary,
-                "screen_capture_detected": screen_capture,
                 "weather_emergency_related": weather_emergency
             }
 
@@ -328,23 +301,13 @@ class ReasoningEngine:
             visual_summary = visual_result.get("visual_summary", "")
             
             # Check if we should process this image
-            screen_capture = self.is_screen_capture(visual_summary)
             weather_emergency = self.is_weather_emergency_related(visual_summary)
             
             if not self.should_process_image(visual_summary):
-                # Provide specific rejection reason
-                if screen_capture:
-                    reason = "Image appears to be a screen capture or screenshot"
-                elif not weather_emergency:
-                    reason = "Image does not appear to be related to weather emergencies or disasters"
-                else:
-                    reason = "Image failed processing criteria"
-                    
                 return {
                     "status": "REJECTED",
-                    "reason": reason,
+                    "reason": "Image does not appear to be related to weather emergencies or disasters",
                     "visual_summary": visual_summary,
-                    "screen_capture_detected": screen_capture,
                     "weather_emergency_related": weather_emergency
                 }
             
